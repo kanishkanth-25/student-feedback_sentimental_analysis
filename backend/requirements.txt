@@ -1,0 +1,10 @@
+fastapi
+uvicorn
+sqlalchemy
+pandas
+openpyxl
+python-multipart
+transformers
+torch
+python-dotenv
+requests
