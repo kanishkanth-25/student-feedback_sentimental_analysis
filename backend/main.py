@@ -11,16 +11,16 @@ import datetime
 
 app = FastAPI(title="Student Feedback API")
 
-# Enable CORS
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["*"],  # In real world, restrict this to your frontend domain
+    allow_origins=["*"],  
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
 
-# Database Setup
+
 DATABASE_URL = os.getenv("DATABASE_URL", "sqlite:///./feedback.db")
 engine = create_engine(
     DATABASE_URL, connect_args={"check_same_thread": False} if DATABASE_URL.startswith("sqlite") else {}
@@ -36,7 +36,7 @@ def get_db():
 
 @app.post("/feedback", response_model=FeedbackResponse)
 def submit_feedback(feedback: FeedbackCreate, db: Session = Depends(get_db)):
-    # Perform sentiment analysis
+    
     analysis = analyze_sentiment(feedback.text)
     
     db_feedback = FeedbackModel(
@@ -62,13 +62,13 @@ def resolve_feedback(feedback_id: int, resolution: dict, db: Session = Depends(g
     
     db_feedback.status = "RESOLVED"
     db_feedback.resolution_note = resolution.get("note", "Resolved by Admin")
-    db_feedback.created_at = datetime.datetime.utcnow() # Update timestamp to move to top of history if needed
+    db_feedback.created_at = datetime.datetime.utcnow() 
     db.commit()
     return {"status": "success"}
 
 @app.post("/upload-feedback")
 async def upload_feedback(file: UploadFile = File(...), db: Session = Depends(get_db)):
-    # Supported formats: CSV, XLSX
+   
     contents = await file.read()
     filename = file.filename.lower()
     
@@ -83,8 +83,7 @@ async def upload_feedback(file: UploadFile = File(...), db: Session = Depends(ge
         required_cols = {'category', 'text', 'student_id'}
         if not required_cols.issubset(df.columns.str.lower()):
             raise HTTPException(status_code=400, detail=f"Missing required columns: {required_cols}")
-            
-        # Normalize columns
+        
         df.columns = df.columns.str.lower()
         
         feedback_objects = []
@@ -113,7 +112,7 @@ async def upload_feedback(file: UploadFile = File(...), db: Session = Depends(ge
 
 @app.post("/login")
 def login(admin: AdminLogin):
-    # Simple hardcoded login as requested
+   
     if admin.username == "admin" and admin.password == "password123":
         return {"status": "success", "token": "fake-admin-token"}
     raise HTTPException(status_code=401, detail="Invalid credentials")
@@ -145,7 +144,7 @@ def get_dashboard_data(db: Session = Depends(get_db)):
             stats["category_distribution"][category] = stats["category_distribution"].get(category, 0) + 1
             stats["location_stats"][location] = stats["location_stats"].get(location, 0) + 1
             
-            # Temporal trends logic
+           
             if date_str not in stats["temporal_trends"]:
                 stats["temporal_trends"][date_str] = {"POSITIVE": 0, "NEGATIVE": 0, "NEUTRAL": 0}
             stats["temporal_trends"][date_str][label] += 1
@@ -163,7 +162,7 @@ def get_dashboard_data(db: Session = Depends(get_db)):
                     "created_at": f.created_at.isoformat()
                 })
 
-        # Simple AI Summary Synthesis
+       
         neg_feedbacks = [f.text for f in feedbacks if f.sentiment_label == "NEGATIVE"]
         if neg_feedbacks:
             stats["ai_summary"] = f"Critical focus areas: {', '.join(set(f.category for f in feedbacks if f.sentiment_label == 'NEGATIVE'))}. Recurring themes detected: {neg_feedbacks[0][:50]}..."
